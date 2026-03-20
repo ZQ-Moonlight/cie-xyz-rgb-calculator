@@ -6,7 +6,7 @@
 [![在线演示](https://img.shields.io/badge/在线试用-点我-brightgreen?style=for-the-badge&logo=github)](https://zq-moonlight.github.io/cie1931-color-converter/)  
 
 *(2026 年 3 月部署，点击上方按钮即可访问)*
-<image-card alt="CIE 1931 色彩空间分析工具主界面截图" src="example.png" ></image-card>
+![CIE 1931 色彩空间分析工具主界面截图](example.png)
 *主界面示例：默认 D65 + sRGB 配置，显示白点 (#FFFFFF) 与 CIE xy 色度图交互效果*
 
 ## 💡 项目简介
