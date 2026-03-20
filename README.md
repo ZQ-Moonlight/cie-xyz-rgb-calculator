@@ -1,5 +1,8 @@
 # CIE 1931 色彩空间分析工具  
 **CIE Color Space Analyzer**
+## 🌊 Built with "Vibe Coding"
+
+[![在线演示](https://img.shields.io/badge/在线试用-点我-brightgreen?style=for-the-badge&logo=github)](https://zq-moonlight.github.io/cie-xyz-rgb-calculator/)
 
 ## 项目一句话介绍
 
@@ -61,10 +64,6 @@
 - 背景渲染目前固定用 sRGB（可以改成当前选中的 RGB 空间，但计算量会变大）
 - 没有处理极低亮度（Y≈0）时的数值不稳定
 
-## License
-
-MIT License  
-随便用、随便改、随便商用（但记得保留对 Bruce Lindbloom 的尊重与链接）
 
 Happy color hacking! 🌈
 
