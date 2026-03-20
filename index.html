@@ -48,12 +48,13 @@
         .input-group { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
         .input-group span { width: 35px; font-weight: bold; color: var(--text-muted); text-align: right; }
         
-        .c-xyz { border-top: 3px solid #8b5cf6; }
-        .c-xyy { border-top: 3px solid #6366f1; }
-        .c-cct { border-top: 3px solid #f59e0b; }
-        .c-rgb { border-top: 3px solid #ef4444; }
-        .c-lab { border-top: 3px solid #10b981; }
-        .c-luv { border-top: 3px solid #0ea5e9; }
+        /* 按照可见光谱顺序重新映射的六种颜色 */
+        .c-xyz { border-top: 3px solid #ef4444; } /* 赤 */
+        .c-xyy { border-top: 3px solid #f97316; } /* 橙 */
+        .c-cct { border-top: 3px solid #eab308; } /* 黄 */
+        .c-rgb { border-top: 3px solid #22c55e; } /* 绿 */
+        .c-lab { border-top: 3px solid #0ea5e9; } /* 青 */
+        .c-luv { border-top: 3px solid #8b5cf6; } /* 紫 */
         
         .swatch-box { height: 70px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold; color: white; text-shadow: 0 1px 3px rgba(0,0,0,0.5); box-shadow: inset 0 2px 10px rgba(0,0,0,0.1);}
         .canvas-wrap { position: relative; background: #fff; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); display: flex; justify-content: center; align-items: center;}
@@ -433,7 +434,6 @@ function updateAllUI(excludeSource, P) {
     let b8 = Math.round(MathUtils.clamp(P.rgbSpec.enc(MathUtils.clamp(linRGB[2],0,1)),0,1)*255);
     let finalHex = '';
 
-    // 核心修复逻辑：解耦 RGB/HEX 的数据刷新流
     if (excludeSource === 'RGB') {
         let cR = parseInt(document.getElementById('val_R').value) || 0;
         let cG = parseInt(document.getElementById('val_G').value) || 0;
@@ -453,7 +453,6 @@ function updateAllUI(excludeSource, P) {
         document.getElementById('val_HEX').value = finalHex;
     }
 
-    // 色块永远保持全局状态计算同步
     let srgbP = { WP: Illuminants.D65.XYZ, rgbSpec: RGBSpaces.sRGB, xyzToRgb: (xyz) => MathUtils.mulMatVec(MathUtils.invMat(buildRGBMatrix(RGBSpaces.sRGB)), MathUtils.mulMatVec(getAdaptationMatrix(P.WP, Illuminants.D65.XYZ, document.getElementById('env_adapt').value), xyz.map(v=>v/100))) };
     let sLin = srgbP.xyzToRgb(XYZ);
     let sr = Math.round(RGBSpaces.sRGB.enc(MathUtils.clamp(sLin[0],0,1))*255);
