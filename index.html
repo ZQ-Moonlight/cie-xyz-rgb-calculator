@@ -3,478 +3,595 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>高级 CIE 1931 色彩空间分析系统 (旗舰版)</title>
+    <title>CIE Color Space Calculator & Analyzer Pro</title>
     <style>
         :root {
-            --bg-color: #f0f2f5;
-            --panel-bg: #ffffff;
+            --bg: #f4f7f9;
+            --panel: #ffffff;
             --text-main: #1e293b;
             --text-muted: #64748b;
-            --primary: #2563eb;
-            --primary-hover: #1d4ed8;
-            --border-color: #cbd5e1;
-            --shadow: 0 4px 15px rgba(0,0,0,0.05);
+            --primary: #0284c7;
+            --primary-hover: #0369a1;
+            --border: #cbd5e1;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
             --radius: 12px;
         }
 
-        body { font-family: system-ui, -apple-system, sans-serif; background-color: var(--bg-color); color: var(--text-main); margin: 0; padding: 20px; }
-        h1 { text-align: center; color: #1e3a8a; margin-bottom: 5px; }
-        .subtitle { text-align: center; color: var(--text-muted); margin-bottom: 30px; font-size: 0.95rem; }
+        body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; background: var(--bg); color: var(--text-main); margin: 0; padding: 20px; }
         
-        .container { max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
-        .section { background: var(--panel-bg); padding: 20px; border-radius: var(--radius); box-shadow: var(--shadow); border: 1px solid #e2e8f0; }
-        .section-title { margin-top: 0; font-size: 1.2rem; color: #0f172a; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 15px; }
+        /* 顶部全局控制区 */
+        .top-bar { max-width: 1400px; margin: 0 auto 20px auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;}
+        .title-group h1 { font-size: 1.75rem; margin: 0 0 5px 0; color: #0f172a; }
+        .title-group p { margin: 0; color: var(--text-muted); font-size: 0.95rem; }
         
-        .row { display: flex; flex-wrap: wrap; gap: 20px; }
-        .col { flex: 1; min-width: 300px; }
+        .global-controls { display: flex; gap: 10px; align-items: center; background: var(--panel); padding: 10px 15px; border-radius: var(--radius); box-shadow: var(--shadow); border: 1px solid var(--border);}
+        .toggle-label { font-size: 0.9rem; font-weight: 600; display: flex; align-items: center; gap: 5px; cursor: pointer; color: var(--text-main); }
+        .btn-action { background: var(--primary); color: white; border: none; padding: 8px 16px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        .btn-action:hover { background: var(--primary-hover); }
+        .btn-lang { background: transparent; border: 1px solid var(--border); color: var(--text-main); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .btn-lang:hover { background: #f1f5f9; }
+
+        /* 主布局 */
+        .dashboard { max-width: 1400px; margin: 0 auto; display: grid; grid-template-columns: 1fr 450px; gap: 20px; }
+        @media(max-width: 1100px) { .dashboard { grid-template-columns: 1fr; } }
+
+        .card { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px; }
+        .card-header { font-weight: 700; font-size: 1.05rem; margin-bottom: 12px; border-bottom: 1px solid var(--border); padding-bottom: 8px; color: #334155;}
         
-        label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 5px; color: var(--text-muted); }
-        select, input[type="number"], button { width: 100%; padding: 10px; margin-bottom: 15px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 0.95rem; outline: none; transition: all 0.2s; box-sizing: border-box; }
-        select:focus, input:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+        /* 环境参数配置行 */
+        .env-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 10px; }
+        label { display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-muted); margin-bottom: 4px; }
+        select, input[type="number"], input[type="text"] { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.95rem; box-sizing: border-box; transition: all 0.2s; background: #f8fafc; font-family: monospace;}
+        select:focus, input:focus { border-color: var(--primary); outline: none; background: #fff; box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15); }
         
-        button { background: var(--primary); color: white; font-weight: bold; cursor: pointer; border: none; }
-        button:hover { background: var(--primary-hover); transform: translateY(-1px); }
-        button.btn-outline { background: white; color: var(--primary); border: 1px solid var(--primary); }
-        button.btn-outline:hover { background: #eff6ff; }
+        /* 计算器网格：拆分为更小的独立卡片 */
+        .calc-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; }
+        .calc-card { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 12px 15px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);}
+        .calc-title { font-size: 0.9rem; font-weight: 700; color: #475569; margin-bottom: 10px; border-bottom: 1px dashed var(--border); padding-bottom: 6px;}
         
-        .color-preview-box { display: flex; align-items: center; gap: 15px; padding: 15px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; margin-bottom: 15px; }
-        .color-swatch { width: 60px; height: 60px; border-radius: 8px; border: 2px solid #94a3b8; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1); }
-        .color-data { font-family: monospace; font-size: 1.1rem; font-weight: bold; }
+        .input-group { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+        .input-group span { width: 35px; font-weight: bold; color: var(--text-muted); text-align: right; }
         
-        .canvas-wrapper { position: relative; display: flex; justify-content: center; background: #fafafa; border-radius: 8px; border: 1px solid var(--border-color); overflow: hidden; }
-        canvas { max-width: 100%; cursor: crosshair; }
-        .hover-tooltip { position: absolute; top: 15px; right: 15px; background: rgba(255, 255, 255, 0.95); padding: 8px 12px; border-radius: 6px; font-size: 0.85rem; font-family: monospace; font-weight: bold; border: 1px solid var(--border-color); box-shadow: 0 4px 6px rgba(0,0,0,0.1); pointer-events: none; display: none; z-index: 10;}
+        /* 卡片顶部分类色条 */
+        .c-xyz { border-top: 3px solid #8b5cf6; }
+        .c-xyy { border-top: 3px solid #6366f1; }
+        .c-cct { border-top: 3px solid #f59e0b; }
+        .c-rgb { border-top: 3px solid #ef4444; }
+        .c-lab { border-top: 3px solid #10b981; }
+        .c-luv { border-top: 3px solid #0ea5e9; }
         
-        .controls-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin-bottom: 15px; }
+        /* 右侧面板 */
+        .swatch-box { height: 70px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold; color: white; text-shadow: 0 1px 3px rgba(0,0,0,0.5); box-shadow: inset 0 2px 10px rgba(0,0,0,0.1);}
+        .canvas-wrap { position: relative; background: #fff; border-radius: 8px; overflow: hidden; border: 1px solid var(--border); display: flex; justify-content: center; align-items: center;}
+        canvas { max-width: 100%; height: auto; cursor: crosshair; }
+        
+        .out-of-gamut { color: #ef4444; font-size: 0.85rem; font-weight: bold; visibility: hidden; text-align: center; margin-bottom: 10px; min-height: 1.2em;}
+        .hover-tooltip { position: absolute; top: 10px; right: 10px; background: rgba(255,255,255,0.95); padding: 5px 10px; border-radius: 4px; font-size: 0.8rem; font-family: monospace; border: 1px solid var(--border); pointer-events: none; display: none; }
+        
+        /* 被选中的活动卡片高亮 */
+        .active-card { border-color: var(--primary); box-shadow: 0 0 0 2px rgba(2, 132, 199, 0.2); }
     </style>
 </head>
 <body>
 
-<h1>🚀 高级 CIE 1931 色彩空间分析系统</h1>
-<div class="subtitle">全功能融合版：物理级彩色马蹄图渲染 + 交互式色域对比 + PNG 报告导出</div>
-
-<div class="container">
-    <div class="section">
-        <h2 class="section-title">⚙️ 全局环境设置</h2>
-        <div class="row">
-            <div class="col">
-                <label>源 RGB 色彩空间</label>
-                <select id="rgbSpace">
-                    <option value="sRGB">sRGB (标准网页/显示)</option>
-                    <option value="Rec709">Rec. 709 (高清电视)</option>
-                    <option value="DisplayP3">Apple Display P3</option>
-                    <option value="AdobeRGB">Adobe RGB (1998)</option>
-                    <option value="ProPhoto">ProPhoto RGB (ROMM)</option>
-                    <option value="Rec2020">Rec. 2020 (UHD / HDR)</option>
-                </select>
-            </div>
-            <div class="col">
-                <label>目标观察参考白点</label>
-                <select id="whitePoint">
-                    <option value="D65">D65 (6504K) - 常用标准</option>
-                    <option value="D50">D50 (5003K) - 印刷/ProPhoto</option>
-                    <option value="D75">D75 (7504K)</option>
-                    <option value="E">E (等能白点)</option>
-                </select>
-            </div>
-            <div class="col">
-                <label>色域覆盖范围比对</label>
-                <select id="gamutSelect">
-                    <option value="all">显示所有常见色域</option>
-                    <option value="sRGB">仅突出 sRGB</option>
-                    <option value="AdobeRGB">仅突出 Adobe RGB</option>
-                    <option value="DisplayP3">仅突出 Display P3</option>
-                    <option value="Rec2020">仅突出 Rec. 2020</option>
-                    <option value="none">隐藏比对色域</option>
-                </select>
-            </div>
-        </div>
+<div class="top-bar">
+    <div class="title-group">
+        <h1 data-zh="高级 CIE 1931 全能分析面板" data-en="CIE Color Space Calculator Pro">高级 CIE 1931 全能分析面板</h1>
+        <p data-zh="基于 Bruce Lindbloom 标准数学模型的专业转换引擎" data-en="Professional engine referencing Bruce Lindbloom standard models">基于 Bruce Lindbloom 标准数学模型的专业转换引擎</p>
     </div>
+    
+    <div class="global-controls">
+        <button class="btn-lang" id="btnLang" onclick="toggleLang()">🌐 English / 中文</button>
+        <label class="toggle-label" style="margin: 0 10px; border-left: 1px solid var(--border); padding-left: 15px;">
+            <input type="checkbox" id="realtimeToggle" checked> 
+            <span data-zh="实时同步运算" data-en="Real-time Sync">实时同步运算</span>
+        </label>
+        <button class="btn-action" id="btnSync" onclick="forceSync()" style="display: none;">
+            <span data-zh="🔄 执行确认 / 刷新" data-en="🔄 Sync / Calculate">🔄 执行确认 / 刷新</span>
+        </button>
+    </div>
+</div>
 
-    <div class="row">
-        <div class="col section">
-            <h2 class="section-title">RGB → XYZ (正向转换)</h2>
-            <div class="row" style="gap:10px">
-                <div class="col"><label>R (0-255)</label><input type="number" id="rgb_R" value="255" min="0" max="255"></div>
-                <div class="col"><label>G (0-255)</label><input type="number" id="rgb_G" value="128" min="0" max="255"></div>
-                <div class="col"><label>B (0-255)</label><input type="number" id="rgb_B" value="0" min="0" max="255"></div>
-            </div>
-            <div class="color-preview-box">
-                <div class="color-swatch" id="colorSwatch"></div>
-                <div class="color-data">
-                    <div style="color:var(--text-muted); font-size:0.8rem; font-family:system-ui">CIE XYZ (Y=亮度)</div>
-                    X: <span id="outX">0.00</span> | Y: <span id="outY">0.00</span> | Z: <span id="outZ">0.00</span>
+<div class="dashboard">
+    <!-- 左侧：环境设置与拆分网格计算器 -->
+    <div class="main-column">
+        
+        <div class="card" style="margin-bottom: 20px;">
+            <div class="card-header" data-zh="1. 环境校准与基础参数 (Environment Setup)" data-en="1. Environment & Calibration">1. 环境校准与基础参数 (Environment Setup)</div>
+            <div class="env-row">
+                <div>
+                    <label data-zh="目标参考白点 (Illuminant)" data-en="Reference Illuminant">目标参考白点 (Illuminant)</label>
+                    <select id="env_wp">
+                        <option value="D65">D65 (6504K - sRGB/TV)</option>
+                        <option value="D50">D50 (5003K - Print/Lab)</option>
+                        <option value="D75">D75 (7504K)</option>
+                        <option value="A">A (2856K - Tungsten)</option>
+                        <option value="C">C (6774K - Legacy)</option>
+                        <option value="E">E (5400K - Equal Energy)</option>
+                    </select>
+                </div>
+                <div>
+                    <label data-zh="目标色彩空间 (RGB Space)" data-en="RGB Model">目标色彩空间 (RGB Space)</label>
+                    <select id="env_rgb">
+                        <option value="sRGB">sRGB</option>
+                        <option value="AdobeRGB">Adobe RGB (1998)</option>
+                        <option value="DisplayP3">Apple Display P3</option>
+                        <option value="Rec709">Rec. 709 (HDTV)</option>
+                        <option value="Rec2020">Rec. 2020 (UHDTV)</option>
+                        <option value="ProPhoto">ProPhoto RGB</option>
+                    </select>
+                </div>
+                <div>
+                    <label data-zh="色度适应算法 (Adaptation)" data-en="Chromatic Adaptation">色度适应算法 (Adaptation)</label>
+                    <select id="env_adapt">
+                        <option value="Bradford">Bradford (推荐)</option>
+                        <option value="VonKries">Von Kries</option>
+                        <option value="XYZScaling">XYZ Scaling</option>
+                        <option value="None">None (绝对坐标)</option>
+                    </select>
                 </div>
             </div>
         </div>
 
-        <div class="col section">
-            <h2 class="section-title">XYZ → RGB (逆向拾取)</h2>
-            <div class="row" style="gap:10px">
-                <div class="col"><label>x (色度坐标)</label><input type="number" id="xy_x" step="0.001" readonly style="background:#f1f5f9"></div>
-                <div class="col"><label>y (色度坐标)</label><input type="number" id="xy_y" step="0.001" readonly style="background:#f1f5f9"></div>
-                <div class="col"><label>Y (相对亮度)</label><input type="number" id="xyz_Y_input" step="0.1" value="100" readonly style="background:#f1f5f9"></div>
+        <div class="card">
+            <div class="card-header" data-zh="2. 空间坐标数据面板 (Data Inspector)" data-en="2. Color Space Coordinates">2. 空间坐标数据面板 (Data Inspector)</div>
+            <div class="calc-grid">
+                
+                <!-- XYZ -->
+                <div class="calc-card c-xyz" id="card_XYZ">
+                    <div class="calc-title" data-zh="CIE XYZ (绝对光量刺激值)" data-en="CIE XYZ (Absolute)">CIE XYZ (绝对光量刺激值)</div>
+                    <div class="input-group"><span>X</span><input type="number" id="val_X" step="0.01"></div>
+                    <div class="input-group"><span>Y</span><input type="number" id="val_Y" step="0.01"></div>
+                    <div class="input-group"><span>Z</span><input type="number" id="val_Z" step="0.01"></div>
+                </div>
+
+                <!-- xyY -->
+                <div class="calc-card c-xyy" id="card_xyY">
+                    <div class="calc-title" data-zh="CIE xyY (色度投影与亮度)" data-en="CIE xyY (Chromaticity)">CIE xyY (色度投影与亮度)</div>
+                    <div class="input-group"><span>x</span><input type="number" id="val_x" step="0.0001"></div>
+                    <div class="input-group"><span>y</span><input type="number" id="val_y" step="0.0001"></div>
+                    <div class="input-group"><span>Y</span><input type="number" id="val_YY" step="0.01" readonly style="background: #e2e8f0; color:#64748b" data-zh-title="此值与上方 XYZ的Y 共享绑定" data-en-title="Linked to XYZ's Y value"></div>
+                </div>
+
+                <!-- CCT -->
+                <div class="calc-card c-cct" id="card_CCT">
+                    <div class="calc-title" data-zh="CCT (物理相关色温)" data-en="CCT (Color Temp)">CCT (物理相关色温)</div>
+                    <div class="input-group"><span>K</span><input type="number" id="val_CCT" step="1" title="Correlated Color Temperature (Kelvin)"></div>
+                    <p style="font-size: 0.75rem; color: var(--text-muted); margin: 5px 0 0 0;" data-zh="使用 McCamy 近似解析方程" data-en="Via McCamy approximation">使用 McCamy 近似解析方程</p>
+                </div>
+
+                <!-- RGB -->
+                <div class="calc-card c-rgb" id="card_RGB">
+                    <div class="calc-title" data-zh="Device RGB (设备编码值)" data-en="Device RGB (8-bit)">Device RGB (设备编码值)</div>
+                    <div class="input-group"><span>R</span><input type="number" id="val_R" min="0" max="255"></div>
+                    <div class="input-group"><span>G</span><input type="number" id="val_G" min="0" max="255"></div>
+                    <div class="input-group"><span>B</span><input type="number" id="val_B" min="0" max="255"></div>
+                </div>
+
+                <!-- CIELAB -->
+                <div class="calc-card c-lab" id="card_Lab">
+                    <div class="calc-title" data-zh="CIE L*a*b* / LCH(ab)" data-en="CIE L*a*b* & LCH(ab)">CIE L*a*b* / LCH(ab)</div>
+                    <div class="input-group"><span>L*</span><input type="number" id="val_Lab_L" step="0.1"></div>
+                    <div class="input-group"><span>a*</span><input type="number" id="val_Lab_a" step="0.1"></div>
+                    <div class="input-group"><span>b*</span><input type="number" id="val_Lab_b" step="0.1"></div>
+                    <hr style="border:0; border-top:1px solid #e2e8f0; margin:8px 0;">
+                    <div class="input-group"><span>C</span><input type="number" id="val_LCHab_C" step="0.1"></div>
+                    <div class="input-group"><span>h°</span><input type="number" id="val_LCHab_H" step="0.1"></div>
+                </div>
+
+                <!-- CIELUV -->
+                <div class="calc-card c-luv" id="card_Luv">
+                    <div class="calc-title" data-zh="CIE L*u*v* / LCH(uv)" data-en="CIE L*u*v* & LCH(uv)">CIE L*u*v* / LCH(uv)</div>
+                    <div class="input-group"><span>L*</span><input type="number" id="val_Luv_L" step="0.1"></div>
+                    <div class="input-group"><span>u*</span><input type="number" id="val_Luv_u" step="0.1"></div>
+                    <div class="input-group"><span>v*</span><input type="number" id="val_Luv_v" step="0.1"></div>
+                    <hr style="border:0; border-top:1px solid #e2e8f0; margin:8px 0;">
+                    <div class="input-group"><span>C</span><input type="number" id="val_LCHuv_C" step="0.1"></div>
+                    <div class="input-group"><span>h°</span><input type="number" id="val_LCHuv_H" step="0.1"></div>
+                </div>
+
             </div>
-            <p style="font-size: 0.85rem; color: #ef4444; margin-top:-5px; display:none;" id="outOfGamutWarning">⚠️ 该坐标超出当前选定色域的物理显示极限，已进行色域映射裁剪。</p>
         </div>
     </div>
 
-    <div class="section">
-        <h2 class="section-title">🎨 CIE 1931 xy 交互色度图</h2>
-        
-        <div class="controls-grid">
-            <button onclick="randomColor()">🎲 随机拾取可见色</button>
-            <button onclick="exportPNG()" class="btn-outline">📥 导出分析图表 (PNG)</button>
-            <select id="showLabels" style="margin-bottom:0;"><option value="1">显示外围波长标签</option><option value="0">隐藏波长标签</option></select>
+    <!-- 右侧：可视化与色度图 -->
+    <div class="vis-column">
+        <div class="card" style="height: 100%; display: flex; flex-direction: column;">
+            <div class="swatch-box" id="ui_swatch">#FFFFFF</div>
+            <div class="out-of-gamut" id="ui_gamut_warn" data-zh="⚠️ 超出当前色域映射范围" data-en="⚠️ Out of RGB Gamut">⚠️ 超出当前色域映射范围</div>
+            
+            <div style="margin-bottom: 8px; font-weight: bold; font-size: 0.9rem; color: #334155" data-zh="CIE 1931 xy 交互色度图" data-en="CIE 1931 xy Chromaticity Diagram">CIE 1931 xy 交互色度图</div>
+            
+            <div class="canvas-wrap" style="flex:1;">
+                <div class="hover-tooltip" id="hoverTooltip">x:0.0 y:0.0</div>
+                <canvas id="cieCanvas" width="450" height="480"></canvas>
+            </div>
+            <p style="font-size: 0.75rem; color: var(--text-muted); text-align: center; margin-top: 10px; line-height: 1.5;">
+                <span data-zh="交互式点图：鼠标点击或拖动以取色" data-en="Interactive Plot: Click/Drag to pick color">交互式点图：鼠标点击或拖动以取色</span><br>
+                <span data-zh="底图色彩代表当前坐标下的物理最亮渲染极限" data-en="Background shows maximum physical luminance mapping">底图色彩代表当前坐标下的物理最亮渲染极限</span>
+            </p>
         </div>
-
-        <div class="canvas-wrapper">
-            <div class="hover-tooltip" id="hoverTooltip">x: 0.0000, y: 0.0000</div>
-            <canvas id="cieCanvas" width="700" height="750"></canvas>
-        </div>
-        <p style="text-align: center; font-size: 0.85rem; color: var(--text-muted); margin-top: 15px;">
-            🖱️ 交互说明：点击或拖动画布即可取色。系统会自动执行“最大纯度亮度归一化”，确保点击白点即得纯白。<br>彩色背景代表 sRGB 显示器所能呈现的极致物理映射。
-        </p>
     </div>
 </div>
 
 <script>
-// ==========================================
-// 1. 核心数学与物理引擎 (来自 V2 严谨版)
-// ==========================================
+/** ============================================================================
+ * PART 0: Application State & i18n
+ * ============================================================================ */
+let isRealtime = true;
+let activeSource = 'RGB'; 
+let currentLang = 'zh';
+
+function toggleLang() {
+    currentLang = currentLang === 'zh' ? 'en' : 'zh';
+    document.querySelectorAll('[data-zh]').forEach(el => { el.innerText = el.getAttribute(`data-${currentLang}`); });
+    document.querySelectorAll('[data-zh-title]').forEach(el => { el.title = el.getAttribute(`data-${currentLang}-title`); });
+}
+
+document.getElementById('realtimeToggle').addEventListener('change', (e) => {
+    isRealtime = e.target.checked;
+    document.getElementById('btnSync').style.display = isRealtime ? 'none' : 'block';
+});
+
+function forceSync() { syncFrom(activeSource, true); }
+
+function setActiveCard(sourceId) {
+    document.querySelectorAll('.calc-card').forEach(c => c.classList.remove('active-card'));
+    if(sourceId) {
+        let card = document.getElementById('card_' + sourceId);
+        if(card) card.classList.add('active-card');
+    }
+}
+
+/** ============================================================================
+ * PART 1: Core Mathematical & Color Science Engine (Lindbloom Standard)
+ * ============================================================================ */
 const MathUtils = {
-    multiplyMatrixVector: (m, v) => [
-        m[0][0]*v[0] + m[0][1]*v[1] + m[0][2]*v[2],
-        m[1][0]*v[0] + m[1][1]*v[1] + m[1][2]*v[2],
-        m[2][0]*v[0] + m[2][1]*v[1] + m[2][2]*v[2]
-    ],
-    multiplyMatrices: (a, b) => {
-        let result = [[0,0,0],[0,0,0],[0,0,0]];
-        for (let i=0; i<3; i++) {
-            for (let j=0; j<3; j++) {
-                result[i][j] = a[i][0]*b[0][j] + a[i][1]*b[1][j] + a[i][2]*b[2][j];
-            }
-        }
-        return result;
+    clamp: (v, min, max) => Math.max(min, Math.min(max, v)),
+    deg2rad: d => d * Math.PI / 180,
+    rad2deg: r => { let d = r * 180 / Math.PI; return d < 0 ? d + 360 : d; },
+    mulMatVec: (m, v) => [ m[0][0]*v[0]+m[0][1]*v[1]+m[0][2]*v[2], m[1][0]*v[0]+m[1][1]*v[1]+m[1][2]*v[2], m[2][0]*v[0]+m[2][1]*v[1]+m[2][2]*v[2] ],
+    mulMatMat: (a, b) => {
+        let r = [[0,0,0],[0,0,0],[0,0,0]];
+        for(let i=0;i<3;i++) for(let j=0;j<3;j++) r[i][j] = a[i][0]*b[0][j] + a[i][1]*b[1][j] + a[i][2]*b[2][j];
+        return r;
     },
-    invertMatrix: (m) => {
+    invMat: (m) => {
         let det = m[0][0]*(m[1][1]*m[2][2] - m[1][2]*m[2][1]) - m[0][1]*(m[1][0]*m[2][2] - m[1][2]*m[2][0]) + m[0][2]*(m[1][0]*m[2][1] - m[1][1]*m[2][0]);
-        let invDet = 1 / det;
+        let idet = 1 / det;
         return [
-            [(m[1][1]*m[2][2] - m[1][2]*m[2][1])*invDet, (m[0][2]*m[2][1] - m[0][1]*m[2][2])*invDet, (m[0][1]*m[1][2] - m[0][2]*m[1][1])*invDet],
-            [(m[1][2]*m[2][0] - m[1][0]*m[2][2])*invDet, (m[0][0]*m[2][2] - m[0][2]*m[2][0])*invDet, (m[0][2]*m[1][0] - m[0][0]*m[1][2])*invDet],
-            [(m[1][0]*m[2][1] - m[1][1]*m[2][0])*invDet, (m[0][1]*m[2][0] - m[0][0]*m[2][1])*invDet, (m[0][0]*m[1][1] - m[0][1]*m[1][0])*invDet]
+            [(m[1][1]*m[2][2]-m[1][2]*m[2][1])*idet, (m[0][2]*m[2][1]-m[0][1]*m[2][2])*idet, (m[0][1]*m[1][2]-m[0][2]*m[1][1])*idet],
+            [(m[1][2]*m[2][0]-m[1][0]*m[2][2])*idet, (m[0][0]*m[2][2]-m[0][2]*m[2][0])*idet, (m[0][2]*m[1][0]-m[0][0]*m[1][2])*idet],
+            [(m[1][0]*m[2][1]-m[1][1]*m[2][0])*idet, (m[0][1]*m[2][0]-m[0][0]*m[2][1])*idet, (m[0][0]*m[1][1]-m[0][1]*m[1][0])*idet]
         ];
-    },
-    clamp: (val, min, max) => Math.max(min, Math.min(max, val))
+    }
 };
 
+const CIE_E = 216 / 24389;
+const CIE_K = 24389 / 27;
+
 const Illuminants = {
-    D65: [0.95047, 1.00000, 1.08883], D50: [0.96422, 1.00000, 0.82521], D75: [0.94972, 1.00000, 1.22638], E: [1.00000, 1.00000, 1.00000],
-    xy: { D65: [0.3127, 0.3290], D50: [0.3457, 0.3585], D75: [0.2990, 0.3149], E: [0.3333, 0.3333] }
+    A:   { x: 0.44757, y: 0.40745, XYZ: [109.850, 100.000, 35.585] },
+    C:   { x: 0.31006, y: 0.31616, XYZ: [98.074, 100.000, 118.232] },
+    D50: { x: 0.34567, y: 0.35850, XYZ: [96.422, 100.000, 82.521] },
+    D65: { x: 0.31271, y: 0.32902, XYZ: [95.047, 100.000, 108.883] },
+    D75: { x: 0.29902, y: 0.31485, XYZ: [94.972, 100.000, 122.638] },
+    E:   { x: 0.33333, y: 0.33333, XYZ: [100.000, 100.000, 100.000] }
 };
 
 const RGBSpaces = {
-    sRGB: { wp: 'D65', primaries: { r: [0.6400, 0.3300], g: [0.3000, 0.6000], b: [0.1500, 0.0600] }, encode: v => v <= 0.0031308 ? v * 12.92 : 1.055 * Math.pow(v, 1/2.4) - 0.055, decode: v => v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055)/1.055, 2.4), color: '#ef4444' },
-    Rec709: { wp: 'D65', primaries: { r: [0.6400, 0.3300], g: [0.3000, 0.6000], b: [0.1500, 0.0600] }, encode: v => v < 0.018 ? 4.5 * v : 1.099 * Math.pow(v, 0.45) - 0.099, decode: v => v < 0.081 ? v / 4.5 : Math.pow((v + 0.099)/1.099, 1/0.45), color: '#f97316' },
-    DisplayP3: { wp: 'D65', primaries: { r: [0.6800, 0.3200], g: [0.2650, 0.6900], b: [0.1500, 0.0600] }, encode: v => v <= 0.0031308 ? v * 12.92 : 1.055 * Math.pow(v, 1/2.4) - 0.055, decode: v => v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055)/1.055, 2.4), color: '#22d3ee' },
-    AdobeRGB: { wp: 'D65', primaries: { r: [0.6400, 0.3300], g: [0.2100, 0.7100], b: [0.1500, 0.0600] }, encode: v => Math.pow(v, 1/2.19921875), decode: v => Math.pow(v, 2.19921875), color: '#eab308' },
-    ProPhoto: { wp: 'D50', primaries: { r: [0.7347, 0.2653], g: [0.1596, 0.8404], b: [0.0366, 0.0001] }, encode: v => v < 0.001953125 ? v * 16.0 : Math.pow(v, 1/1.8), decode: v => v < 0.031248 ? v / 16.0 : Math.pow(v, 1.8), color: '#10b981' },
-    Rec2020: { wp: 'D65', primaries: { r: [0.7080, 0.2920], g: [0.1700, 0.7970], b: [0.1310, 0.0460] }, encode: v => v < 0.0181 ? 4.5 * v : 1.099 * Math.pow(v, 0.45) - 0.099, decode: v => v < 0.08145 ? v / 4.5 : Math.pow((v + 0.099)/1.099, 1/0.45), color: '#a855f7' }
+    sRGB: { wp: 'D65', px: [0.64,0.30,0.15], py: [0.33,0.60,0.06], dec: v=>v<=0.04045?v/12.92:Math.pow((v+0.055)/1.055, 2.4), enc: v=>v<=0.0031308?v*12.92:1.055*Math.pow(v,1/2.4)-0.055 },
+    AdobeRGB: { wp: 'D65', px: [0.64,0.21,0.15], py: [0.33,0.71,0.06], dec: v=>Math.pow(v, 2.19921875), enc: v=>Math.pow(v, 1/2.19921875) },
+    DisplayP3: { wp: 'D65', px: [0.68,0.265,0.15], py: [0.32,0.69,0.06], dec: v=>v<=0.04045?v/12.92:Math.pow((v+0.055)/1.055, 2.4), enc: v=>v<=0.0031308?v*12.92:1.055*Math.pow(v,1/2.4)-0.055 },
+    Rec709: { wp: 'D65', px: [0.64,0.30,0.15], py: [0.33,0.60,0.06], dec: v=>v<0.081?v/4.5:Math.pow((v+0.099)/1.099, 1/0.45), enc: v=>v<0.018?4.5*v:1.099*Math.pow(v,0.45)-0.099 },
+    Rec2020: { wp: 'D65', px: [0.708,0.170,0.131], py: [0.292,0.797,0.046], dec: v=>v<0.08145?v/4.5:Math.pow((v+0.099)/1.099, 1/0.45), enc: v=>v<0.0181?4.5*v:1.099*Math.pow(v,0.45)-0.099 },
+    ProPhoto: { wp: 'D50', px: [0.7347,0.1596,0.0366], py: [0.2653,0.8404,0.0001], dec: v=>v<0.031248?v/16.0:Math.pow(v, 1.8), enc: v=>v<0.001953125?v*16.0:Math.pow(v, 1/1.8) }
 };
 
-const BradfordMatrix = [ [ 0.8951, 0.2664, -0.1614], [-0.7502, 1.7135, 0.0367], [ 0.0389, -0.0685, 1.0296] ];
-const BradfordInv = MathUtils.invertMatrix(BradfordMatrix);
-const SpectralLocus = [ [0.1741, 0.0050], [0.1726, 0.0048], [0.1689, 0.0069], [0.1611, 0.0138], [0.1440, 0.0297], [0.1241, 0.0578], [0.0913, 0.1327], [0.0454, 0.2950], [0.0082, 0.5384], [0.0139, 0.7502], [0.0743, 0.8338], [0.1547, 0.8059], [0.2296, 0.7543], [0.3016, 0.6923], [0.3731, 0.6245], [0.4441, 0.5547], [0.5125, 0.4866], [0.5752, 0.4242], [0.6270, 0.3725], [0.6658, 0.3340], [0.6915, 0.3083], [0.7079, 0.2920], [0.7190, 0.2809], [0.7260, 0.2740], [0.7300, 0.2700], [0.7320, 0.2680], [0.7334, 0.2666], [0.7344, 0.2656], [0.7346, 0.2654] ];
+const AdaptMatrices = {
+    Bradford: [ [0.8951,0.2664,-0.1614], [-0.7502,1.7135,0.0367], [0.0389,-0.0685,1.0296] ],
+    VonKries: [ [0.40024,0.7076,-0.08081], [-0.2263,1.16532,0.0457], [0,0,0.91822] ],
+    XYZScaling: [ [1,0,0], [0,1,0], [0,0,1] ],
+    None: null
+};
 
-function getBradfordAdaptationMatrix(srcWP_XYZ, dstWP_XYZ) {
-    if (srcWP_XYZ[0] === dstWP_XYZ[0] && srcWP_XYZ[1] === dstWP_XYZ[1]) return [[1,0,0],[0,1,0],[0,0,1]];
-    let srcCone = MathUtils.multiplyMatrixVector(BradfordMatrix, srcWP_XYZ);
-    let dstCone = MathUtils.multiplyMatrixVector(BradfordMatrix, dstWP_XYZ);
-    let diag = [ [dstCone[0]/srcCone[0], 0, 0], [0, dstCone[1]/srcCone[1], 0], [0, 0, dstCone[2]/srcCone[2]] ];
-    return MathUtils.multiplyMatrices(BradfordInv, MathUtils.multiplyMatrices(diag, BradfordMatrix));
+/** ============================================================================
+ * PART 2: Color Space Conversions & CCT Logic
+ * ============================================================================ */
+function getAdaptationMatrix(srcWP, dstWP, method) {
+    if(method === 'None' || (srcWP[0]===dstWP[0] && srcWP[1]===dstWP[1] && srcWP[2]===dstWP[2])) return [[1,0,0],[0,1,0],[0,0,1]];
+    let MA = AdaptMatrices[method], srcC = MathUtils.mulMatVec(MA, srcWP), dstC = MathUtils.mulMatVec(MA, dstWP);
+    let diag = [ [dstC[0]/srcC[0],0,0], [0,dstC[1]/srcC[1],0], [0,0,dstC[2]/srcC[2]] ];
+    return MathUtils.mulMatMat(MathUtils.invMat(MA), MathUtils.mulMatMat(diag, MA));
 }
 
-function buildRGBtoXYZMatrix(spaceConfig) {
-    let p = spaceConfig.primaries;
-    let Xr = p.r[0]/p.r[1], Yr = 1, Zr = (1-p.r[0]-p.r[1])/p.r[1];
-    let Xg = p.g[0]/p.g[1], Yg = 1, Zg = (1-p.g[0]-p.g[1])/p.g[1];
-    let Xb = p.b[0]/p.b[1], Yb = 1, Zb = (1-p.b[0]-p.b[1])/p.b[1];
-    let P_inv = MathUtils.invertMatrix([[Xr, Xg, Xb], [Yr, Yg, Yb], [Zr, Zg, Zb]]);
-    let S = MathUtils.multiplyMatrixVector(P_inv, Illuminants[spaceConfig.wp]);
-    return [ [S[0]*Xr, S[1]*Xg, S[2]*Xb], [S[0]*Yr, S[1]*Yg, S[2]*Yb], [S[0]*Zr, S[1]*Zg, S[2]*Zb] ];
+function buildRGBMatrix(rgbObj) {
+    let Xr = rgbObj.px[0]/rgbObj.py[0], Yr = 1, Zr = (1-rgbObj.px[0]-rgbObj.py[0])/rgbObj.py[0];
+    let Xg = rgbObj.px[1]/rgbObj.py[1], Yg = 1, Zg = (1-rgbObj.px[1]-rgbObj.py[1])/rgbObj.py[1];
+    let Xb = rgbObj.px[2]/rgbObj.py[2], Yb = 1, Zb = (1-rgbObj.px[2]-rgbObj.py[2])/rgbObj.py[2];
+    let PInv = MathUtils.invMat([[Xr,Xg,Xb],[Yr,Yg,Yb],[Zr,Zg,Zb]]);
+    let S = MathUtils.mulMatVec(PInv, Illuminants[rgbObj.wp].XYZ.map(v=>v/100));
+    return [[S[0]*Xr, S[1]*Xg, S[2]*Xb], [S[0]*Yr, S[1]*Yg, S[2]*Yb], [S[0]*Zr, S[1]*Zg, S[2]*Zb]];
 }
 
-// ==========================================
-// 2. 核心状态与控制器
-// ==========================================
-let lastEdited = 'RGB';
-let currentXY = { x: 0.3127, y: 0.3290 };
+const ColorConvert = {
+    XYZ_to_xyY: (XYZ) => { let sum = XYZ[0]+XYZ[1]+XYZ[2]; return sum === 0 ? [0.3127, 0.3290, 0] : [XYZ[0]/sum, XYZ[1]/sum, XYZ[1]]; },
+    xyY_to_XYZ: (xyY) => { if(xyY[1] === 0) return [0,0,0]; return [(xyY[0]*xyY[2])/xyY[1], xyY[2], ((1-xyY[0]-xyY[1])*xyY[2])/xyY[1]]; },
+    xy_to_CCT: (x, y) => { let n = (x - 0.3320) / (0.1858 - y); return 449 * Math.pow(n, 3) + 3525 * Math.pow(n, 2) + 6823.3 * n + 5520.33; },
+    CCT_to_xy: (T) => {
+        if (T < 1667 || T > 25000) return null; 
+        let x, y;
+        if (T <= 4000) x = -0.2661239 * 1e9 / (T*T*T) - 0.2343589 * 1e6 / (T*T) + 0.8776956 * 1e3 / T + 0.179910;
+        else x = -3.0258469 * 1e9 / (T*T*T) + 2.1070379 * 1e6 / (T*T) + 0.2226347 * 1e3 / T + 0.240390;
+        let x2 = x * x, x3 = x2 * x;
+        if (T <= 2222) y = -1.1063814 * x3 - 1.34811020 * x2 + 2.18555832 * x - 0.20219683;
+        else if (T <= 4000) y = -0.9549476 * x3 - 1.37418593 * x2 + 2.09137015 * x - 0.16748867;
+        else y = 3.0817580 * x3 - 5.87338670 * x2 + 3.75112997 * x - 0.37001483;
+        return [x, y];
+    },
+    XYZ_to_Lab: (XYZ, WP) => {
+        let xr = XYZ[0]/WP[0], yr = XYZ[1]/WP[1], zr = XYZ[2]/WP[2];
+        let fx = xr > CIE_E ? Math.cbrt(xr) : (CIE_K * xr + 16) / 116, fy = yr > CIE_E ? Math.cbrt(yr) : (CIE_K * yr + 16) / 116, fz = zr > CIE_E ? Math.cbrt(zr) : (CIE_K * zr + 16) / 116;
+        return [116 * fy - 16, 500 * (fx - fy), 200 * (fy - fz)];
+    },
+    Lab_to_XYZ: (Lab, WP) => {
+        let fy = (Lab[0] + 16) / 116, fx = Lab[1]/500 + fy, fz = fy - Lab[2]/200;
+        let xr = Math.pow(fx,3) > CIE_E ? Math.pow(fx,3) : (116*fx - 16) / CIE_K, yr = Lab[0] > CIE_K * CIE_E ? Math.pow((Lab[0]+16)/116, 3) : Lab[0] / CIE_K, zr = Math.pow(fz,3) > CIE_E ? Math.pow(fz,3) : (116*fz - 16) / CIE_K;
+        return [xr * WP[0], yr * WP[1], zr * WP[2]];
+    },
+    Lab_to_LCH: (Lab) => { let C = Math.sqrt(Lab[1]*Lab[1] + Lab[2]*Lab[2]), H = MathUtils.rad2deg(Math.atan2(Lab[2], Lab[1])); return [Lab[0], C, isNaN(H)?0:H]; },
+    LCH_to_Lab: (LCH) => { let hr = MathUtils.deg2rad(LCH[2]); return [LCH[0], LCH[1] * Math.cos(hr), LCH[1] * Math.sin(hr)]; },
+    XYZ_to_Luv: (XYZ, WP) => {
+        let denom = XYZ[0] + 15*XYZ[1] + 3*XYZ[2];
+        let up = denom === 0 ? 0 : (4*XYZ[0])/denom, vp = denom === 0 ? 0 : (9*XYZ[1])/denom;
+        let denomW = WP[0] + 15*WP[1] + 3*WP[2];
+        let upW = (4*WP[0])/denomW, vpW = (9*WP[1])/denomW;
+        let yr = XYZ[1]/WP[1], L = yr > CIE_E ? 116 * Math.cbrt(yr) - 16 : CIE_K * yr;
+        return [L, 13 * L * (up - upW), 13 * L * (vp - vpW)];
+    },
+    Luv_to_XYZ: (Luv, WP) => {
+        if(Luv[0] === 0) return [0,0,0];
+        let denomW = WP[0] + 15*WP[1] + 3*WP[2];
+        let upW = (4*WP[0])/denomW, vpW = (9*WP[1])/denomW;
+        let up = Luv[1]/(13*Luv[0]) + upW, vp = Luv[2]/(13*Luv[0]) + vpW;
+        let Y = Luv[0] > CIE_K * CIE_E ? Math.pow((Luv[0]+16)/116, 3) : Luv[0] / CIE_K; Y = Y * WP[1];
+        return [Y * (9*up)/(4*vp), Y, Y * (12 - 3*up - 20*vp)/(4*vp)];
+    }
+};
 
-function getActiveConfig() {
-    let spaceName = document.getElementById('rgbSpace').value;
-    let targetWPName = document.getElementById('whitePoint').value;
-    let space = RGBSpaces[spaceName];
-    let rgbToXyzNative = buildRGBtoXYZMatrix(space);
-    let adaptFwd = getBradfordAdaptationMatrix(Illuminants[space.wp], Illuminants[targetWPName]);
-    let adaptRev = getBradfordAdaptationMatrix(Illuminants[targetWPName], Illuminants[space.wp]);
-    return { 
-        space, spaceName, targetWPName,
-        finalRgbToXyz: MathUtils.multiplyMatrices(adaptFwd, rgbToXyzNative), 
-        finalXyzToRgb: MathUtils.multiplyMatrices(MathUtils.invertMatrix(rgbToXyzNative), adaptRev)
-    };
+/** ============================================================================
+ * PART 3: Reactive UI Controller
+ * ============================================================================ */
+let GlobalXYZ = [95.047, 100.0, 108.883];
+
+function getPipelines() {
+    let wpName = document.getElementById('env_wp').value, rgbName = document.getElementById('env_rgb').value, adaptName = document.getElementById('env_adapt').value;
+    let WP_Target = Illuminants[wpName].XYZ, rgbSpec = RGBSpaces[rgbName], WP_RGB = Illuminants[rgbSpec.wp].XYZ;
+    let M_RGB_to_XYZ = buildRGBMatrix(rgbSpec), M_XYZ_to_RGB = MathUtils.invMat(M_RGB_to_XYZ);
+    let M_Adapt_Fwd = getAdaptationMatrix(WP_RGB, WP_Target, adaptName), M_Adapt_Rev = getAdaptationMatrix(WP_Target, WP_RGB, adaptName); 
+    return { WP: WP_Target, rgbSpec, xyzToRgb: (XYZ) => MathUtils.mulMatVec(M_XYZ_to_RGB, MathUtils.mulMatVec(M_Adapt_Rev, XYZ.map(v=>v/100))), rgbToXyz: (linRGB) => MathUtils.mulMatVec(M_Adapt_Fwd, MathUtils.mulMatVec(M_RGB_to_XYZ, linRGB)).map(v=>v*100) };
 }
 
-function processRgbToXyz() {
-    let { space, finalRgbToXyz } = getActiveConfig();
-    let R = MathUtils.clamp(parseFloat(document.getElementById('rgb_R').value) / 255.0 || 0, 0, 1);
-    let G = MathUtils.clamp(parseFloat(document.getElementById('rgb_G').value) / 255.0 || 0, 0, 1);
-    let B = MathUtils.clamp(parseFloat(document.getElementById('rgb_B').value) / 255.0 || 0, 0, 1);
-
-    let linRGB = [space.decode(R), space.decode(G), space.decode(B)];
-    let XYZ = MathUtils.multiplyMatrixVector(finalRgbToXyz, linRGB);
-    let [X, Y, Z] = [XYZ[0]*100, XYZ[1]*100, XYZ[2]*100];
-
-    let sum = X + Y + Z;
-    currentXY.x = sum === 0 ? Illuminants.xy[getActiveConfig().targetWPName][0] : X / sum;
-    currentXY.y = sum === 0 ? Illuminants.xy[getActiveConfig().targetWPName][1] : Y / sum;
-
-    updateUI(X, Y, Z, R, G, B, false);
-}
-
-function processXyzToRgb(targetX, targetY, targetZ) {
-    let { space, finalXyzToRgb } = getActiveConfig();
-    let linRGB = MathUtils.multiplyMatrixVector(finalXyzToRgb, [targetX/100, targetY/100, targetZ/100]);
+function syncFrom(source, force = false) {
+    activeSource = source;
+    setActiveCard(source);
     
-    const eps = -0.0001;
-    let isOutOfGamut = (linRGB[0]<eps || linRGB[0]>1.0001 || linRGB[1]<eps || linRGB[1]>1.0001 || linRGB[2]<eps || linRGB[2]>1.0001);
+    // 如果不是实时模式且不是强制执行，仅仅记录来源，不更新 UI
+    if (!isRealtime && !force && source !== 'canvas') return;
     
-    let R = space.encode(MathUtils.clamp(linRGB[0], 0, 1));
-    let G = space.encode(MathUtils.clamp(linRGB[1], 0, 1));
-    let B = space.encode(MathUtils.clamp(linRGB[2], 0, 1));
+    let P = getPipelines();
+    let val = id => parseFloat(document.getElementById(id).value) || 0;
+    
+    if (source === 'XYZ') {
+        GlobalXYZ = [val('val_X'), val('val_Y'), val('val_Z')];
+    } else if (source === 'xyY') {
+        GlobalXYZ = ColorConvert.xyY_to_XYZ([val('val_x'), val('val_y'), val('val_Y')]);
+    } else if (source === 'CCT') {
+        let T = MathUtils.clamp(val('val_CCT'), 1667, 25000); 
+        let xy = ColorConvert.CCT_to_xy(T);
+        if (xy) GlobalXYZ = ColorConvert.xyY_to_XYZ([xy[0], xy[1], val('val_Y') || 100]);
+    } else if (source === 'RGB') {
+        GlobalXYZ = P.rgbToXyz([P.rgbSpec.dec(val('val_R')/255), P.rgbSpec.dec(val('val_G')/255), P.rgbSpec.dec(val('val_B')/255)]);
+    } else if (source === 'Lab' || source === 'LCHab') {
+        let labData = source === 'Lab' ? [val('val_Lab_L'), val('val_Lab_a'), val('val_Lab_b')] : ColorConvert.LCH_to_Lab([val('val_Lab_L'), val('val_LCHab_C'), val('val_LCHab_H')]);
+        GlobalXYZ = ColorConvert.Lab_to_XYZ(labData, P.WP);
+    } else if (source === 'Luv' || source === 'LCHuv') {
+        let luvData = source === 'Luv' ? [val('val_Luv_L'), val('val_Luv_u'), val('val_Luv_v')] : ColorConvert.LCH_to_Lab([val('val_Luv_L'), val('val_LCHuv_C'), val('val_LCHuv_H')]);
+        GlobalXYZ = ColorConvert.Luv_to_XYZ(luvData, P.WP);
+    }
 
-    document.getElementById('rgb_R').value = Math.round(R * 255);
-    document.getElementById('rgb_G').value = Math.round(G * 255);
-    document.getElementById('rgb_B').value = Math.round(B * 255);
-
-    updateUI(targetX, targetY, targetZ, R, G, B, isOutOfGamut);
+    updateAllUI(source === 'canvas' ? 'xyY' : source, P);
 }
 
-function updateUI(X, Y, Z, R, G, B, isOutOfGamut) {
-    document.getElementById('outX').innerText = X.toFixed(2);
-    document.getElementById('outY').innerText = Y.toFixed(2);
-    document.getElementById('outZ').innerText = Z.toFixed(2);
-    document.getElementById('xy_x').value = currentXY.x.toFixed(4);
-    document.getElementById('xy_y').value = currentXY.y.toFixed(4);
-    document.getElementById('xyz_Y_input').value = Y.toFixed(2);
-    
-    // 生成浏览器 sRGB 预览色块
-    let xyzToSrgb = MathUtils.invertMatrix(buildRGBtoXYZMatrix(RGBSpaces.sRGB));
-    let linSrgb = MathUtils.multiplyMatrixVector(xyzToSrgb, [X/100, Y/100, Z/100]);
-    let sr = Math.round(RGBSpaces.sRGB.encode(MathUtils.clamp(linSrgb[0], 0, 1)) * 255);
-    let sg = Math.round(RGBSpaces.sRGB.encode(MathUtils.clamp(linSrgb[1], 0, 1)) * 255);
-    let sb = Math.round(RGBSpaces.sRGB.encode(MathUtils.clamp(linSrgb[2], 0, 1)) * 255);
-    document.getElementById('colorSwatch').style.backgroundColor = `rgb(${sr},${sg},${sb})`;
-    document.getElementById('outOfGamutWarning').style.display = isOutOfGamut ? 'block' : 'none';
+function updateAllUI(excludeSource, P) {
+    let XYZ = GlobalXYZ;
+    let setVal = (id, v, fixed) => { if(excludeSource !== id.split('_')[1] && excludeSource !== id.split('_')[2]) document.getElementById(id).value = v.toFixed(fixed); };
 
-    drawCIE();
+    // XYZ
+    setVal('val_X', XYZ[0], 3); setVal('val_Y', XYZ[1], 3); setVal('val_Z', XYZ[2], 3);
+    
+    // xyY
+    let xyY = ColorConvert.XYZ_to_xyY(XYZ);
+    if(excludeSource !== 'xyY' && excludeSource !== 'CCT' && excludeSource !== 'canvas') {
+        document.getElementById('val_x').value = xyY[0].toFixed(4); document.getElementById('val_y').value = xyY[1].toFixed(4);
+    }
+    document.getElementById('val_YY').value = XYZ[1].toFixed(3); // Linked Y
+    
+    // CCT
+    let cct = ColorConvert.xy_to_CCT(xyY[0], xyY[1]);
+    if(excludeSource !== 'CCT') document.getElementById('val_CCT').value = Math.round(cct);
+
+    // Lab & LCHab & Luv & LCHuv
+    let lab = ColorConvert.XYZ_to_Lab(XYZ, P.WP), lch = ColorConvert.Lab_to_LCH(lab);
+    let luv = ColorConvert.XYZ_to_Luv(XYZ, P.WP), lchuv = ColorConvert.Lab_to_LCH(luv);
+    setVal('val_Lab_L', lab[0], 2); setVal('val_Lab_a', lab[1], 2); setVal('val_Lab_b', lab[2], 2);
+    setVal('val_LCHab_C', lch[1], 2); setVal('val_LCHab_H', lch[2], 2);
+    setVal('val_Luv_L', luv[0], 2); setVal('val_Luv_u', luv[1], 2); setVal('val_Luv_v', luv[2], 2);
+    setVal('val_LCHuv_C', lchuv[1], 2); setVal('val_LCHuv_H', lchuv[2], 2);
+
+    // RGB & Gamut Warning (容错范围扩大至 1.0005，彻底消除舍入导致的误报警)
+    let linRGB = P.xyzToRgb(XYZ);
+    let isOOG = (linRGB[0]< -0.0005 || linRGB[0]> 1.0005 || linRGB[1]< -0.0005 || linRGB[1]> 1.0005 || linRGB[2]< -0.0005 || linRGB[2]> 1.0005);
+    document.getElementById('ui_gamut_warn').style.visibility = isOOG ? 'visible' : 'hidden';
+
+    let r8 = Math.round(MathUtils.clamp(P.rgbSpec.enc(MathUtils.clamp(linRGB[0],0,1)),0,1)*255);
+    let g8 = Math.round(MathUtils.clamp(P.rgbSpec.enc(MathUtils.clamp(linRGB[1],0,1)),0,1)*255);
+    let b8 = Math.round(MathUtils.clamp(P.rgbSpec.enc(MathUtils.clamp(linRGB[2],0,1)),0,1)*255);
+    
+    if(excludeSource !== 'RGB') {
+        document.getElementById('val_R').value = r8; document.getElementById('val_G').value = g8; document.getElementById('val_B').value = b8;
+        let hex = `#${(1<<24 | r8<<16 | g8<<8 | b8).toString(16).slice(1).toUpperCase()}`;
+        
+        let srgbP = { WP: Illuminants.D65.XYZ, rgbSpec: RGBSpaces.sRGB, xyzToRgb: (xyz) => MathUtils.mulMatVec(MathUtils.invMat(buildRGBMatrix(RGBSpaces.sRGB)), MathUtils.mulMatVec(getAdaptationMatrix(P.WP, Illuminants.D65.XYZ, document.getElementById('env_adapt').value), xyz.map(v=>v/100))) };
+        let sLin = srgbP.xyzToRgb(XYZ);
+        let sr = Math.round(RGBSpaces.sRGB.enc(MathUtils.clamp(sLin[0],0,1))*255);
+        let sg = Math.round(RGBSpaces.sRGB.enc(MathUtils.clamp(sLin[1],0,1))*255);
+        let sb = Math.round(RGBSpaces.sRGB.enc(MathUtils.clamp(sLin[2],0,1))*255);
+        document.getElementById('ui_swatch').style.backgroundColor = `rgb(${sr},${sg},${sb})`;
+        document.getElementById('ui_swatch').style.color = (lab[0] < 50) ? '#fff' : '#000';
+        document.getElementById('ui_swatch').innerText = hex;
+    }
+
+    drawCIE(xyY[0], xyY[1]);
 }
 
-// ==========================================
-// 3. 高级可视化绘图引擎 (融合两者优点)
-// ==========================================
+/** ============================================================================
+ * PART 4: Event Listeners Binding
+ * ============================================================================ */
+const bindInput = (id, source) => document.getElementById(id).addEventListener('input', () => syncFrom(source));
+const bindFocus = (id, source) => document.getElementById(id).addEventListener('focus', () => setActiveCard(source));
+
+['val_X','val_Y','val_Z'].forEach(id => { bindInput(id, 'XYZ'); bindFocus(id, 'XYZ'); });
+['val_x','val_y'].forEach(id => { bindInput(id, 'xyY'); bindFocus(id, 'xyY'); });
+['val_CCT'].forEach(id => { bindInput(id, 'CCT'); bindFocus(id, 'CCT'); });
+['val_R','val_G','val_B'].forEach(id => { bindInput(id, 'RGB'); bindFocus(id, 'RGB'); });
+['val_Lab_L','val_Lab_a','val_Lab_b'].forEach(id => { bindInput(id, 'Lab'); bindFocus(id, 'Lab'); });
+['val_LCHab_C','val_LCHab_H'].forEach(id => { bindInput(id, 'LCHab'); bindFocus(id, 'Lab'); });
+['val_Luv_L','val_Luv_u','val_Luv_v'].forEach(id => { bindInput(id, 'Luv'); bindFocus(id, 'Luv'); });
+['val_LCHuv_C','val_LCHuv_H'].forEach(id => { bindInput(id, 'LCHuv'); bindFocus(id, 'Luv'); });
+
+['env_wp', 'env_rgb', 'env_adapt'].forEach(id => {
+    document.getElementById(id).addEventListener('change', () => { bgImageData=null; syncFrom('XYZ', true); });
+});
+
+/** ============================================================================
+ * PART 5: Canvas Rendering Engine (CIE 1931 xy)
+ * ============================================================================ */
 const canvas = document.getElementById('cieCanvas');
 const ctx = canvas.getContext('2d');
+const tooltip = document.getElementById('hoverTooltip');
 let bgImageData = null; 
 
-// 留出边距用于绘制坐标和标签
-const PADDING = 50; 
-const mapX = x => PADDING + (x / 0.8) * (canvas.width - PADDING*2);
-const mapY = y => (canvas.height - PADDING) - (y / 0.9) * (canvas.height - PADDING*2);
-const unmapX = px => ((px - PADDING) / (canvas.width - PADDING*2)) * 0.8;
-const unmapY = py => (((canvas.height - PADDING) - py) / (canvas.height - PADDING*2)) * 0.9;
+const PAD = 30; 
+const mapX = x => PAD + (x / 0.8) * (canvas.width - PAD*2);
+const mapY = y => (canvas.height - PAD) - (y / 0.9) * (canvas.height - PAD*2);
+const unX = px => ((px - PAD) / (canvas.width - PAD*2)) * 0.8;
+const unY = py => (((canvas.height - PAD) - py) / (canvas.height - PAD*2)) * 0.9;
+const SpectralLocus = [ [0.1741,0.0050],[0.1726,0.0048],[0.1689,0.0069],[0.1611,0.0138],[0.1440,0.0297],[0.1241,0.0578],[0.0913,0.1327],[0.0454,0.2950],[0.0082,0.5384],[0.0139,0.7502],[0.0743,0.8338],[0.1547,0.8059],[0.2296,0.7543],[0.3016,0.6923],[0.3731,0.6245],[0.4441,0.5547],[0.5125,0.4866],[0.5752,0.4242],[0.6270,0.3725],[0.6658,0.3340],[0.6915,0.3083],[0.7079,0.2920],[0.7190,0.2809],[0.7260,0.2740],[0.7300,0.2700],[0.7320,0.2680],[0.7334,0.2666],[0.7344,0.2656],[0.7346,0.2654] ];
 
-function preRenderCIEBackground() {
+function preRenderCIE() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
-    let horseshoe = new Path2D();
-    horseshoe.moveTo(mapX(SpectralLocus[0][0]), mapY(SpectralLocus[0][1]));
-    for (let i = 1; i < SpectralLocus.length; i++) horseshoe.lineTo(mapX(SpectralLocus[i][0]), mapY(SpectralLocus[i][1]));
-    horseshoe.closePath();
+    let hs = new Path2D();
+    hs.moveTo(mapX(SpectralLocus[0][0]), mapY(SpectralLocus[0][1]));
+    for(let i=1;i<SpectralLocus.length;i++) hs.lineTo(mapX(SpectralLocus[i][0]), mapY(SpectralLocus[i][1]));
+    hs.closePath();
 
-    let offscreen = document.createElement('canvas'); offscreen.width = canvas.width; offscreen.height = canvas.height;
-    let offCtx = offscreen.getContext('2d'); let imgData = offCtx.createImageData(canvas.width, canvas.height); let data = imgData.data;
-    let xyzToSrgb = MathUtils.invertMatrix(buildRGBtoXYZMatrix(RGBSpaces.sRGB));
+    let off = document.createElement('canvas'); off.width = canvas.width; off.height = canvas.height;
+    let od = off.getContext('2d').createImageData(canvas.width, canvas.height); let data = od.data;
+    let srgbInv = MathUtils.invMat(buildRGBMatrix(RGBSpaces.sRGB));
 
-    // 严谨的去饱和归一化彩色渲染
-    for (let py = 0; py < canvas.height; py++) {
-        for (let px = 0; px < canvas.width; px++) {
-            let cx = unmapX(px), cy = unmapY(py);
-            if (cx < 0 || cy < 0 || cx > 1 || cy > 1) continue;
-            let index = (py * canvas.width + px) * 4;
-            let X = cx, Y = cy, Z = 1 - cx - cy;
-            let linRGB = MathUtils.multiplyMatrixVector(xyzToSrgb, [X, Y, Z]);
-            let r = linRGB[0], g = linRGB[1], b = linRGB[2];
-            let minC = Math.min(r, g, b); if (minC < 0) { r -= minC; g -= minC; b -= minC; }
-            let maxC = Math.max(r, g, b); if (maxC > 0) { r /= maxC; g /= maxC; b /= maxC; }
-            data[index] = Math.round(RGBSpaces.sRGB.encode(r) * 255); data[index+1] = Math.round(RGBSpaces.sRGB.encode(g) * 255); data[index+2] = Math.round(RGBSpaces.sRGB.encode(b) * 255); data[index+3] = 255; 
+    for(let py=0; py<canvas.height; py++) {
+        for(let px=0; px<canvas.width; px++) {
+            let cx=unX(px), cy=unY(py);
+            if(cx<0||cy<0||cx>1||cy>1) continue;
+            let idx = (py*canvas.width + px)*4;
+            let lin = MathUtils.mulMatVec(srgbInv, [cx,cy,1-cx-cy]);
+            let r=lin[0], g=lin[1], b=lin[2];
+            let minC = Math.min(r,g,b); if(minC<0){r-=minC; g-=minC; b-=minC;}
+            let maxC = Math.max(r,g,b); if(maxC>0){r/=maxC; g/=maxC; b/=maxC;}
+            data[idx] = Math.round(RGBSpaces.sRGB.enc(r)*255); data[idx+1] = Math.round(RGBSpaces.sRGB.enc(g)*255); data[idx+2] = Math.round(RGBSpaces.sRGB.enc(b)*255); data[idx+3] = 255; 
         }
     }
-    offCtx.putImageData(imgData, 0, 0);
+    off.getContext('2d').putImageData(od, 0, 0);
+    ctx.save(); ctx.clip(hs); ctx.drawImage(off,0,0); ctx.restore();
 
-    ctx.save(); ctx.clip(horseshoe); ctx.drawImage(offscreen, 0, 0); ctx.restore();
-
-    // 绘制网格
-    ctx.lineWidth = 1; ctx.strokeStyle = 'rgba(0,0,0,0.1)'; 
-    for (let i=0.1; i<=0.8; i+=0.1) {
-        ctx.beginPath(); ctx.moveTo(mapX(i), PADDING); ctx.lineTo(mapX(i), canvas.height-PADDING); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(PADDING, mapY(i)); ctx.lineTo(canvas.width-PADDING, mapY(i)); ctx.stroke();
-        // 坐标轴文字
-        ctx.fillStyle = '#64748b'; ctx.font = '12px sans-serif'; ctx.textAlign='center';
-        ctx.fillText(i.toFixed(1), mapX(i), canvas.height - PADDING + 15);
-        ctx.textAlign='right'; ctx.textBaseline='middle';
-        ctx.fillText(i.toFixed(1), PADDING - 10, mapY(i));
+    ctx.lineWidth=1; ctx.strokeStyle='rgba(0,0,0,0.1)';
+    for(let i=0.1;i<=0.8;i+=0.1){
+        ctx.beginPath(); ctx.moveTo(mapX(i),PAD); ctx.lineTo(mapX(i),canvas.height-PAD); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(PAD,mapY(i)); ctx.lineTo(canvas.width-PAD,mapY(i)); ctx.stroke();
+        ctx.fillStyle='#94a3b8'; ctx.font='10px sans-serif'; ctx.textAlign='center'; ctx.fillText(i.toFixed(1), mapX(i), canvas.height-PAD+12);
+        ctx.textAlign='right'; ctx.textBaseline='middle'; ctx.fillText(i.toFixed(1), PAD-5, mapY(i));
     }
-    
-    // 绘制马蹄图轮廓和紫线
-    ctx.lineWidth = 2.5; ctx.strokeStyle = '#1e293b'; ctx.stroke(horseshoe);
-    ctx.beginPath(); ctx.moveTo(mapX(SpectralLocus[SpectralLocus.length-1][0]), mapY(SpectralLocus[SpectralLocus.length-1][1]));
-    ctx.lineTo(mapX(SpectralLocus[0][0]), mapY(SpectralLocus[0][1]));
-    ctx.strokeStyle = '#64748b'; ctx.stroke(); // Purple line
-
-    bgImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    ctx.lineWidth=2; ctx.strokeStyle='#1e293b'; ctx.stroke(hs);
+    ctx.beginPath(); ctx.moveTo(mapX(SpectralLocus[28][0]), mapY(SpectralLocus[28][1])); ctx.lineTo(mapX(SpectralLocus[0][0]), mapY(SpectralLocus[0][1])); ctx.strokeStyle='#64748b'; ctx.stroke();
+    bgImageData = ctx.getImageData(0,0,canvas.width,canvas.height);
 }
 
-function drawCIE() {
-    if (!bgImageData) preRenderCIEBackground();
-    ctx.putImageData(bgImageData, 0, 0); 
-    
-    let { spaceName, targetWPName } = getActiveConfig();
-    let displayMode = document.getElementById('gamutSelect').value;
-    
-    // 1. 绘制色域对比三角形
-    Object.keys(RGBSpaces).forEach(key => {
-        if(displayMode === 'none') return;
-        if(displayMode !== 'all' && displayMode !== key && key !== spaceName) return; // Always show current unless 'none'
-        
-        let p = RGBSpaces[key].primaries;
-        ctx.beginPath();
-        ctx.moveTo(mapX(p.r[0]), mapY(p.r[1])); ctx.lineTo(mapX(p.g[0]), mapY(p.g[1])); ctx.lineTo(mapX(p.b[0]), mapY(p.b[1]));
-        ctx.closePath();
-        
-        if (key === spaceName) { // 选中的色域加粗高亮
-            ctx.lineWidth = 3; ctx.strokeStyle = '#000'; ctx.stroke();
-            ctx.lineWidth = 1.5; ctx.strokeStyle = '#fff'; ctx.stroke();
-        } else {
-            ctx.lineWidth = 2; ctx.strokeStyle = RGBSpaces[key].color; ctx.stroke();
-        }
-    });
+function drawCIE(currX, currY) {
+    if(!bgImageData) preRenderCIE();
+    ctx.putImageData(bgImageData, 0, 0);
 
-    // 2. 绘制波长标签 (来自用户需求)
-    if(document.getElementById('showLabels').value === '1'){
-        const labelPts = [
-            { idx: 0, text: '380nm' }, { idx: 6, text: '480nm' }, { idx: 12, text: '520nm' }, 
-            { idx: 19, text: '580nm' }, { idx: 25, text: '630nm' }, { idx: 28, text: '780nm' }
-        ];
-        ctx.fillStyle = '#0f172a'; ctx.font = 'bold 13px system-ui';
-        labelPts.forEach(lp => {
-            let pt = SpectralLocus[lp.idx];
-            let px = mapX(pt[0]), py = mapY(pt[1]);
-            // 简单的防遮挡偏移
-            let offX = pt[0] < 0.3 ? -35 : 10;
-            let offY = pt[1] < 0.3 ? 15 : -10;
-            ctx.fillText(lp.text, px + offX, py + offY);
-        });
-    }
-
-    // 3. 绘制参考白点
-    let wp_xy = Illuminants.xy[targetWPName];
-    ctx.beginPath(); ctx.arc(mapX(wp_xy[0]), mapY(wp_xy[1]), 5, 0, Math.PI*2);
-    ctx.fillStyle = 'white'; ctx.fill(); ctx.lineWidth = 2; ctx.strokeStyle = '#000'; ctx.stroke();
-    ctx.fillStyle = '#000'; ctx.font = 'bold 12px sans-serif'; ctx.textAlign='left';
-    ctx.fillText(targetWPName, mapX(wp_xy[0])+8, mapY(wp_xy[1])-5);
-
-    // 4. 绘制当前点准星
-    let px = mapX(currentXY.x), py = mapY(currentXY.y);
-    ctx.beginPath(); ctx.moveTo(px - 12, py); ctx.lineTo(px + 12, py); ctx.moveTo(px, py - 12); ctx.lineTo(px, py + 12);
-    ctx.strokeStyle = '#fff'; ctx.lineWidth = 3; ctx.stroke(); ctx.strokeStyle = '#000'; ctx.lineWidth = 1; ctx.stroke();
+    let P = getPipelines();
     
-    ctx.beginPath(); ctx.arc(px, py, 4, 0, Math.PI*2);
-    ctx.fillStyle = '#ef4444'; ctx.fill(); ctx.lineWidth = 1.5; ctx.strokeStyle = '#fff'; ctx.stroke();
+    // 动态绘制适应后的色域三角形边界 (精准契合用户选定的色域配置与白点)
+    let rxy = ColorConvert.XYZ_to_xyY(P.rgbToXyz([1,0,0]));
+    let gxy = ColorConvert.XYZ_to_xyY(P.rgbToXyz([0,1,0]));
+    let bxy = ColorConvert.XYZ_to_xyY(P.rgbToXyz([0,0,1]));
+
+    ctx.beginPath(); 
+    ctx.moveTo(mapX(rxy[0]), mapY(rxy[1])); 
+    ctx.lineTo(mapX(gxy[0]), mapY(gxy[1])); 
+    ctx.lineTo(mapX(bxy[0]), mapY(bxy[1])); 
+    ctx.closePath();
+    ctx.lineWidth=2; ctx.strokeStyle='#000'; ctx.stroke(); ctx.lineWidth=1; ctx.strokeStyle='#fff'; ctx.stroke();
+
+    let wp = Illuminants[document.getElementById('env_wp').value];
+    ctx.beginPath(); ctx.arc(mapX(wp.x), mapY(wp.y), 4, 0, Math.PI*2); ctx.fillStyle='#fff'; ctx.fill(); ctx.lineWidth=1.5; ctx.strokeStyle='#000'; ctx.stroke();
+
+    let px = mapX(currX), py = mapY(currY);
+    ctx.beginPath(); ctx.moveTo(px-10, py); ctx.lineTo(px+10, py); ctx.moveTo(px, py-10); ctx.lineTo(px, py+10); ctx.strokeStyle='#fff'; ctx.lineWidth=2; ctx.stroke(); ctx.strokeStyle='#000'; ctx.lineWidth=1; ctx.stroke();
+    ctx.beginPath(); ctx.arc(px, py, 4, 0, Math.PI*2); ctx.fillStyle='#ef4444'; ctx.fill(); ctx.stroke();
 }
 
-// ==========================================
-// 4. 交互：精准拾色器与亮度归一化
-// ==========================================
+// 避开 DOM 截断，直接写入引擎状态
 let isDragging = false;
-const tooltip = document.getElementById('hoverTooltip');
-
-function getCanvasPos(e) {
-    let rect = canvas.getBoundingClientRect();
-    return { px: (e.clientX - rect.left) * (canvas.width / rect.width), py: (e.clientY - rect.top) * (canvas.height / rect.height) };
-}
-
-function updateFromCanvas(e) {
-    let pos = getCanvasPos(e);
-    let cx = MathUtils.clamp(unmapX(pos.px), 0.0001, 0.8);
-    let cy = MathUtils.clamp(unmapY(pos.py), 0.0001, 0.9);
+function handleCanvas(e) {
+    let r = canvas.getBoundingClientRect();
+    let cx = MathUtils.clamp(unX((e.clientX - r.left)*(canvas.width/r.width)), 0.0001, 0.8);
+    let cy = MathUtils.clamp(unY((e.clientY - r.top)*(canvas.height/r.height)), 0.0001, 0.9);
     
-    // --- 光量方程求解：计算最大亮度 Y ---
-    let tempX = cx / cy, tempY = 1.0, tempZ = (1 - cx - cy) / cy;
-    let { finalXyzToRgb } = getActiveConfig();
-    let tempRGB = MathUtils.multiplyMatrixVector(finalXyzToRgb, [tempX, tempY, tempZ]);
-    
+    let P = getPipelines();
+    let tempRGB = P.xyzToRgb([cx/cy * 100, 100, (1-cx-cy)/cy * 100]);
     let maxC = Math.max(tempRGB[0], tempRGB[1], tempRGB[2]);
-    let targetY = maxC > 0 ? MathUtils.clamp(1.0 / maxC, 0, 1) : 1.0;
+    let targetY = maxC > 0 ? MathUtils.clamp(100 / maxC, 0, 100) : 100;
+
+    // 直接给核心数据层赋值完整精度浮点数
+    GlobalXYZ = ColorConvert.xyY_to_XYZ([cx, cy, targetY]);
+    activeSource = 'canvas';
+    setActiveCard('xyY');
     
-    let capX = (cx * targetY * 100) / cy;
-    let capY = targetY * 100;
-    let capZ = ((1 - cx - cy) * targetY * 100) / cy;
+    document.getElementById('val_x').value = cx.toFixed(4);
+    document.getElementById('val_y').value = cy.toFixed(4);
+    document.getElementById('val_Y').value = targetY.toFixed(2);
     
-    currentXY = { x: cx, y: cy };
-    lastEdited = 'XYZ';
-    processXyzToRgb(capX, capY, capZ);
+    // 强制派发更新，避免 DOM 数据回读
+    updateAllUI('canvas', P);
 }
 
-// ==========================================
-// 5. 事件绑定与功能扩展
-// ==========================================
-['rgbSpace', 'whitePoint', 'gamutSelect', 'showLabels'].forEach(id => {
-    document.getElementById(id).addEventListener('change', () => {
-        if (id === 'rgbSpace' || id === 'whitePoint') bgImageData = null; // 重新渲染背景
-        if (lastEdited === 'RGB') processRgbToXyz();
-        else updateFromCanvas({clientX: canvas.getBoundingClientRect().left + mapX(currentXY.x)/(canvas.width/canvas.getBoundingClientRect().width), clientY: canvas.getBoundingClientRect().top + mapY(currentXY.y)/(canvas.height/canvas.getBoundingClientRect().height)}); // 触发重新计算
-    });
+canvas.addEventListener('mousedown', e => { isDragging=true; handleCanvas(e); });
+window.addEventListener('mouseup', () => isDragging=false);
+canvas.addEventListener('mousemove', e => {
+    let r = canvas.getBoundingClientRect();
+    let cx = MathUtils.clamp(unX((e.clientX - r.left)*(canvas.width/r.width)), 0, 0.8);
+    let cy = MathUtils.clamp(unY((e.clientY - r.top)*(canvas.height/r.height)), 0, 0.9);
+    tooltip.style.display='block'; tooltip.innerText=`x:${cx.toFixed(4)} y:${cy.toFixed(4)}`;
+    if(isDragging) handleCanvas(e);
 });
+canvas.addEventListener('mouseleave', () => { tooltip.style.display='none'; isDragging=false; });
 
-['rgb_R', 'rgb_G', 'rgb_B'].forEach(id => { document.getElementById(id).addEventListener('input', () => { lastEdited = 'RGB'; processRgbToXyz(); }); });
+// Init
+window.onload = () => { setActiveCard('RGB'); syncFrom('RGB', true); };
 
-canvas.addEventListener('mousedown', (e) => { isDragging = true; updateFromCanvas(e); });
-window.addEventListener('mouseup', () => { isDragging = false; });
-canvas.addEventListener('mousemove', (e) => { 
-    let pos = getCanvasPos(e);
-    let cx = MathUtils.clamp(unmapX(pos.px), 0, 0.8), cy = MathUtils.clamp(unmapY(pos.py), 0, 0.9);
-    tooltip.style.display = 'block'; tooltip.innerText = `x: ${cx.toFixed(4)}, y: ${cy.toFixed(4)}`;
-    if (isDragging) updateFromCanvas(e); 
-});
-canvas.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; isDragging = false; });
-
-function randomColor() {
-    let px = mapX(0.15 + Math.random()*0.45); // 限制在图表中心范围内
-    let py = mapY(0.15 + Math.random()*0.55);
-    let rect = canvas.getBoundingClientRect();
-    let scaleX = canvas.width / rect.width, scaleY = canvas.height / rect.height;
-    updateFromCanvas({ clientX: rect.left + px/scaleX, clientY: rect.top + py/scaleY });
-}
-
-function exportPNG() {
-    const link = document.createElement('a');
-    link.download = `CIE1931_Analysis_${document.getElementById('rgbSpace').value}.png`;
-    link.href = canvas.toDataURL('image/png');
-    link.click();
-}
-
-window.onload = () => { preRenderCIEBackground(); processRgbToXyz(); };
 </script>
 </body>
 </html>
